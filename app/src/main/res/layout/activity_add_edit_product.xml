@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/edit_text_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nom du produit" />
+        <!-- In activity_add_edit_product.xml -->
+        <EditText
+            android:id="@+id/edit_text_category"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Catégorie" />
+
+        <EditText
+            android:id="@+id/edit_text_cost_price"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Prix coûtant"
+            android:inputType="numberDecimal" />
+
+        <EditText
+            android:id="@+id/edit_text_min_stock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Niveau de stock minimum"
+            android:inputType="number" />
+
+        <EditText
+            android:id="@+id/edit_text_supplier"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Fournisseur" />
+        <EditText
+            android:id="@+id/edit_text_price"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="numberDecimal"
+            android:hint="Prix" />
+
+        <EditText
+            android:id="@+id/edit_text_quantity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="Quantité" />
+
+        <EditText
+            android:id="@+id/edit_text_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description (optionnel)" />
+
+        <Button
+            android:id="@+id/button_generate_codes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Générer codes QR et barre" />
+
+        <ImageView
+            android:id="@+id/image_qr"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_marginTop="8dp"
+            android:contentDescription="QR code" />
+
+        <ImageView
+            android:id="@+id/image_barcode"
+            android:layout_width="300dp"
+            android:layout_height="100dp"
+            android:layout_marginTop="8dp"
+            android:contentDescription="Code barre" />
+
+        <Button
+            android:id="@+id/button_save_product"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Enregistrer" />
+
+    </LinearLayout>
+</ScrollView>

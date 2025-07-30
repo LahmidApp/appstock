@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Library Stock Manager</string>
+    <string name="nav_products">Produits</string>
+    <string name="nav_sales">Ventes</string>
+    <string name="nav_purchases">Achats</string>
+    <string name="nav_invoices">Factures</string>
+    <string name="nav_quotes">Devis</string>
+    <string name="nav_dashboard">Tableau de bord</string>
+    <string name="nav_settings">Paramètres</string>
+    <string name="add_product">Ajouter un produit</string>
+    <string name="product_name">Nom du produit</string>
+    <string name="product_price">Prix</string>
+    <string name="product_quantity">Quantité</string>
+    <string name="save">Enregistrer</string>
+    <string name="edit">Modifier</string>
+    <string name="delete">Supprimer</string>
+    <string name="generate_qr">Générer QR</string>
+    <string name="generate_barcode">Générer Code-Barres</string>
+    <string name="export_pdf">Exporter PDF</string>
+    <string name="export_excel">Exporter Excel</string>
+    <string name="settings_title">Paramètres de la librairie</string>
+    <string name="store_name">Nom de la librairie</string>
+    <string name="store_logo">Logo de la librairie</string>
+    <string name="save_settings">Enregistrer les paramètres</string>
+</resources>

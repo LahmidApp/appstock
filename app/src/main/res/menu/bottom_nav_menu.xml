@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Each item has an id, icon and title. Icons can be added to drawable if available. -->
+    <item
+        android:id="@+id/navigation_dashboard"
+        android:icon="@android:drawable/ic_menu_view"
+        android:title="Dashboard" />
+    <item
+        android:id="@+id/navigation_products"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:title="Produits" />
+    <item
+        android:id="@+id/navigation_sales"
+        android:icon="@android:drawable/ic_menu_send"
+        android:title="Ventes" />
+    <item
+        android:id="@+id/navigation_purchases"
+        android:icon="@android:drawable/ic_menu_add"
+        android:title="Achats" />
+    <item
+        android:id="@+id/navigation_more"
+        android:icon="@android:drawable/ic_menu_more"
+        android:title="Plus" />
+</menu>
