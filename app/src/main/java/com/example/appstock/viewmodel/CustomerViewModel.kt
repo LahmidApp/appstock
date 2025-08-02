@@ -11,10 +11,15 @@ import kotlinx.coroutines.launch
  */
 class CustomerViewModel(private val repository: CustomerRepository) : ViewModel() {
     val allCustomers: LiveData<List<Customer>> = repository.allCustomers
+    val recentCustomers: LiveData<List<Customer>> = repository.recentCustomers
+    val loyalCustomers: LiveData<List<Customer>> = repository.loyalCustomers
 
     fun insert(customer: Customer) = viewModelScope.launch(Dispatchers.IO) {
         repository.insert(customer)
     }
+
+    // Pour compatibilité avec l'appel de CustomersScreen (alias de insert)
+    fun addCustomer(customer: Customer) = insert(customer)
 
     fun update(customer: Customer) = viewModelScope.launch(Dispatchers.IO) {
         repository.update(customer)
@@ -22,15 +27,5 @@ class CustomerViewModel(private val repository: CustomerRepository) : ViewModel(
 
     fun delete(customer: Customer) = viewModelScope.launch(Dispatchers.IO) {
         repository.delete(customer)
-    }
-}
-
-class CustomerViewModelFactory(private val repository: CustomerRepository) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(CustomerViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return CustomerViewModel(repository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

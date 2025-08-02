@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Permissions pour le stockage et le partage de fichiers -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <application
+        android:name=".StockApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -10,6 +15,27 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppStock">
+        
+        <!-- Métadonnées pour le nom du développeur -->
+        <meta-data
+            android:name="android.app.default_searchable"
+            android:value="LAHMID" />
+        <meta-data
+            android:name="android.support.V4_DEVELOPER"
+            android:value="@string/developer_name" />
+        <meta-data
+            android:name="com.android.vending.derived.apk.id"
+            android:value="LAHMID" />
+        <meta-data
+            android:name="android.app.author"
+            android:value="LAHMID" />
+        <meta-data
+            android:name="android.app.developer"
+            android:value="LAHMID" />
+        <meta-data
+            android:name="android.content.APP_RESTRICTIONS"
+            android:value="${author}" />
+            
         <activity
             android:name=".ui.activities.MainActivity"
             android:exported="true"
@@ -20,6 +46,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".ui.sales.AddEditSaleActivity" />
+        <activity android:name=".ui.products.AddEditProductActivity" />
+        
+        <!-- FileProvider pour le partage de fichiers CSV et PDF -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

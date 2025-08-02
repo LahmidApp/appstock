@@ -36,7 +36,9 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    LibraryNavigation()
+                    com.example.appstock.ui.components.ScreenWithFooter {
+                        LibraryNavigation()
+                    }
                 }
             }
         }

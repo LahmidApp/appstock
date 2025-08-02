@@ -26,13 +26,3 @@ class PurchaseViewModel(private val repository: PurchaseRepository) : ViewModel(
         repository.delete(purchase)
     }
 }
-
-class PurchaseViewModelFactory(private val repository: PurchaseRepository) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(PurchaseViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return PurchaseViewModel(repository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}

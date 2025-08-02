@@ -17,13 +17,19 @@ class QuoteViewModel(private val repository: QuoteRepository) : ViewModel() {
         repository.insert(quote)
     }
 
+    fun addQuote(quote: Quote) = insert(quote)
+
     fun update(quote: Quote) = viewModelScope.launch(Dispatchers.IO) {
         repository.update(quote)
     }
 
+    fun updateQuote(quote: Quote) = update(quote)
+
     fun delete(quote: Quote) = viewModelScope.launch(Dispatchers.IO) {
         repository.delete(quote)
     }
+
+    fun deleteQuote(quote: Quote) = delete(quote)
 
     fun getItemsForQuote(quoteId: Long): LiveData<List<QuoteItem>> = repository.getItemsForQuote(quoteId)
 
@@ -37,15 +43,5 @@ class QuoteViewModel(private val repository: QuoteRepository) : ViewModel() {
 
     fun deleteItem(item: QuoteItem) = viewModelScope.launch(Dispatchers.IO) {
         repository.deleteItem(item)
-    }
-}
-
-class QuoteViewModelFactory(private val repository: QuoteRepository) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(QuoteViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return QuoteViewModel(repository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

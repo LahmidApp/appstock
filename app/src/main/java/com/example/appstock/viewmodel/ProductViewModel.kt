@@ -52,22 +52,23 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
     fun addProduct(
         name: String,
         description: String?,
-        price: Double, // CHANGED
-        costPrice: Double, //
+        price: Double,
+        costPrice: Double,
         quantity: Int,
-        category: String?,
+        types: List<String>,
         supplier: String?,
         minStockLevel: Int?
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val product = Product(
+                    id = 0,
                     name = name,
                     description = description,
                     price = price,
                     costPrice = costPrice,
-                    quantity = quantity,
-                    category = category,
+                    stock = quantity,
+                    types = types,
                     supplier = supplier,
                     minStockLevel = minStockLevel,
                     barcode = "",
@@ -104,7 +105,7 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
                 val all = repository.allProducts.value ?: emptyList()
                 _products.value = all.filter {
                     it.name.contains(query, ignoreCase = true) ||
-                    (it.category?.contains(query, ignoreCase = true) ?: false)
+                    it.types.any { type -> type.contains(query, ignoreCase = true) }
                 }
                 error.value = null
             } catch (e: Exception) {

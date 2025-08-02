@@ -9,6 +9,15 @@
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginBottom="104dp" />
+
+    <!-- Footer -->
+    <include
+        android:id="@+id/app_footer"
+        layout="@layout/app_footer"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_gravity="bottom"
         android:layout_marginBottom="56dp" />
 
     <!-- Bottom navigation bar -->

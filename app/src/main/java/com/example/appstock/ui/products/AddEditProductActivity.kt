@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.semantics.text
 import androidx.lifecycle.ViewModelProvider
 import com.example.appstock.R
-import com.example.appstock.data.LibraryDatabase
+import com.example.appstock.data.AppDatabase
 import com.example.appstock.data.Product
 import com.example.appstock.data.ProductRepository
 import com.example.appstock.viewmodel.ProductViewModel
@@ -41,7 +41,11 @@ class AddEditProductActivity : AppCompatActivity() {
     private lateinit var barcodeImageView: ImageView
     private lateinit var generateQrButton: Button
     private lateinit var saveButton: Button
-    private lateinit var categoryEditText: EditText
+    //private lateinit var categoryEditText: EditText
+    private lateinit var typeEditText: EditText
+    private lateinit var addTypeButton: Button
+    private lateinit var typesListLayout: android.widget.LinearLayout
+    private val typesList = mutableListOf<String>()
     private lateinit var costPriceEditText: EditText
     private lateinit var minStockLevelEditText: EditText
     private lateinit var supplierEditText: EditText
@@ -64,14 +68,16 @@ class AddEditProductActivity : AppCompatActivity() {
         barcodeImageView = findViewById(R.id.image_barcode)
         generateQrButton = findViewById(R.id.button_generate_codes)
         saveButton = findViewById(R.id.button_save_product)
-        categoryEditText = findViewById(R.id.edit_text_category) // Assuming you add this ID to your XML
+        typeEditText = findViewById(R.id.edit_text_type)
+        addTypeButton = findViewById(R.id.button_add_type)
+        typesListLayout = findViewById(R.id.layout_types_list)
         costPriceEditText = findViewById(R.id.edit_text_cost_price) // Assuming you add this ID
         minStockLevelEditText = findViewById(R.id.edit_text_min_stock) // Assuming you add this ID
         supplierEditText = findViewById(R.id.edit_text_supplier) // Assuming you add this ID
         // ... other initializations ...
 
         // Set up ViewModel
-        val db = LibraryDatabase.getDatabase(this)
+        val db = AppDatabase.getDatabase(this)
         val repository = ProductRepository(db.productDao())
         val factory = ProductViewModelFactory(repository)
         productViewModel = ViewModelProvider(this, factory)[ProductViewModel::class.java]
@@ -79,7 +85,6 @@ class AddEditProductActivity : AppCompatActivity() {
         // Check if editing existing product
         productId = intent.getLongExtra(EXTRA_PRODUCT_ID, -1L).takeIf { it != -1L }
         productId?.let { id ->
-            // We need to load product from database; use coroutine
             CoroutineScope(Dispatchers.IO).launch {
                 val product = repository.getProductById(id)
                 product?.let {
@@ -87,15 +92,35 @@ class AddEditProductActivity : AppCompatActivity() {
                     runOnUiThread {
                         nameEditText.setText(it.name)
                         priceEditText.setText(it.price.toString())
-                        quantityEditText.setText(it.quantity.toString())
+                        quantityEditText.setText(it.stock.toString())
                         descriptionEditText.setText(it.description ?: "")
-                        // Generate code images from stored strings
                         costPriceEditText.setText(it.costPrice?.toString() ?: "")
                         minStockLevelEditText.setText(it.minStockLevel?.toString() ?: "")
                         supplierEditText.setText(it.supplier ?: "")
-                        displayCodes(it.qrCode, it.barcode)
+                        
+                        // Afficher les codes seulement s'ils ne sont pas vides
+                        val qrCode = it.qrCode.takeIf { code -> code.isNotEmpty() } ?: ""
+                        val barcode = it.barcode.takeIf { code -> code.isNotEmpty() } ?: ""
+                        displayCodes(qrCode, barcode)
+                        
+                        // Stocker les codes dans les tags pour la sauvegarde
+                        qrImageView.tag = qrCode
+                        barcodeImageView.tag = barcode
+                        
+                        typesList.clear()
+                        typesList.addAll(it.types)
+                        refreshTypesList()
                     }
                 }
+            }
+        }
+
+        addTypeButton.setOnClickListener {
+            val type = typeEditText.text.toString().trim()
+            if (type.isNotEmpty() && !typesList.contains(type)) {
+                typesList.add(type)
+                typeEditText.text.clear()
+                refreshTypesList()
             }
         }
 
@@ -122,13 +147,28 @@ class AddEditProductActivity : AppCompatActivity() {
     private fun displayCodes(qrData: String, barcodeData: String) {
         try {
             val writer = MultiFormatWriter()
-            val qrMatrix = writer.encode(qrData, BarcodeFormat.QR_CODE, 300, 300)
-            val barcodeMatrix = writer.encode(barcodeData, BarcodeFormat.CODE_128, 600, 150)
-            val encoder = BarcodeEncoder()
-            val qrBitmap: Bitmap = encoder.createBitmap(qrMatrix)
-            val barcodeBitmap: Bitmap = encoder.createBitmap(barcodeMatrix)
-            qrImageView.setImageBitmap(qrBitmap)
-            barcodeImageView.setImageBitmap(barcodeBitmap)
+            
+            // Générer le QR Code seulement si les données ne sont pas vides
+            if (qrData.isNotEmpty()) {
+                val qrMatrix = writer.encode(qrData, BarcodeFormat.QR_CODE, 300, 300)
+                val encoder = BarcodeEncoder()
+                val qrBitmap: Bitmap = encoder.createBitmap(qrMatrix)
+                qrImageView.setImageBitmap(qrBitmap)
+            } else {
+                // Effacer l'image si pas de données
+                qrImageView.setImageDrawable(null)
+            }
+            
+            // Générer le code-barres seulement si les données ne sont pas vides
+            if (barcodeData.isNotEmpty()) {
+                val barcodeMatrix = writer.encode(barcodeData, BarcodeFormat.CODE_128, 600, 150)
+                val encoder = BarcodeEncoder()
+                val barcodeBitmap: Bitmap = encoder.createBitmap(barcodeMatrix)
+                barcodeImageView.setImageBitmap(barcodeBitmap)
+            } else {
+                // Effacer l'image si pas de données
+                barcodeImageView.setImageDrawable(null)
+            }
         } catch (e: WriterException) {
             e.printStackTrace()
             Toast.makeText(this, "Erreur lors de la génération des codes", Toast.LENGTH_SHORT).show()
@@ -140,11 +180,9 @@ class AddEditProductActivity : AppCompatActivity() {
         val priceText = priceEditText.text.toString().trim()
         val quantityText = quantityEditText.text.toString().trim()
         val description = descriptionEditText.text.toString().trim().takeIf { it.isNotEmpty() }
-        val category = categoryEditText.text.toString().trim() // Or make it nullable if your Product allows
         val costPriceText = costPriceEditText.text.toString().trim()
         val minStockLevelText = minStockLevelEditText.text.toString().trim()
-        val supplier = supplierEditText.text.toString().trim() // Or make it nullable
-
+        val supplier = supplierEditText.text.toString().trim()
 
         if (name.isBlank() || priceText.isBlank() || quantityText.isBlank()) {
             Toast.makeText(this, "Veuillez remplir tous les champs obligatoires", Toast.LENGTH_SHORT).show()
@@ -159,25 +197,32 @@ class AddEditProductActivity : AppCompatActivity() {
             Toast.makeText(this, "Prix ou quantité invalide", Toast.LENGTH_SHORT).show()
             return
         }
-        val qrData = qrImageView.tag as? String ?: run {
-            Toast.makeText(this, "Veuillez générer les codes", Toast.LENGTH_SHORT).show()
-            return
+        val qrData = qrImageView.tag as? String ?: ""
+        val barcodeData = barcodeImageView.tag as? String ?: ""
+        
+        // Si on modifie un produit existant et que les codes sont vides, on génère de nouveaux codes
+        val finalQrData = if (qrData.isEmpty()) {
+            "${name}_${System.currentTimeMillis()}"
+        } else {
+            qrData
         }
-        val barcodeData = barcodeImageView.tag as? String ?: run {
-            Toast.makeText(this, "Veuillez générer les codes", Toast.LENGTH_SHORT).show()
-            return
+        
+        val finalBarcodeData = if (barcodeData.isEmpty()) {
+            "${name.hashCode()}_${System.currentTimeMillis().toString().takeLast(4)}"
+        } else {
+            barcodeData
         }
 
         val product = Product(
             id = currentProduct?.id ?: 0,
             name = name,
             price = price,
-            quantity = quantity,
-            barcode = barcodeData,
-            qrCode = qrData,
+            stock = quantity,
+            barcode = finalBarcodeData,
+            qrCode = finalQrData,
             description = description,
             photoUri = currentProduct?.photoUri,
-            category = category.takeIf { it.isNotEmpty() },
+            types = typesList.toList(),
             costPrice = costPrice,
             minStockLevel = minStockLevel,
             supplier = supplier.takeIf { it.isNotEmpty() }
@@ -190,6 +235,29 @@ class AddEditProductActivity : AppCompatActivity() {
             Toast.makeText(this, "Produit ajouté", Toast.LENGTH_SHORT).show()
         }
         finish()
+    }
+
+    private fun refreshTypesList() {
+        typesListLayout.removeAllViews()
+        for ((index, type) in typesList.withIndex()) {
+            val typeView = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                val textView = android.widget.TextView(this@AddEditProductActivity).apply {
+                    text = type
+                    setPadding(0, 0, 16, 0)
+                }
+                val removeBtn = android.widget.Button(this@AddEditProductActivity).apply {
+                    text = "-"
+                    setOnClickListener {
+                        typesList.removeAt(index)
+                        refreshTypesList()
+                    }
+                }
+                addView(textView)
+                addView(removeBtn)
+            }
+            typesListLayout.addView(typeView)
+        }
     }
 
     companion object {

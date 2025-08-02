@@ -11,8 +11,14 @@ interface InvoiceItemDao {
     @Query("SELECT * FROM invoice_items WHERE invoice_id = :invoiceId")
     fun getItemsForInvoice(invoiceId: Long): LiveData<List<InvoiceItem>>
 
+    @Query("SELECT * FROM invoice_items WHERE invoice_id = :invoiceId")
+    suspend fun getItemsForInvoiceSync(invoiceId: Long): List<InvoiceItem>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: InvoiceItem): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertInvoiceItem(item: InvoiceItem): Long // Alias plus explicite
 
     @Update
     suspend fun update(item: InvoiceItem)

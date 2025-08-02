@@ -1,1 +1,8 @@
 /build
+
+# Keystore files (SECURITY)
+keystore.properties
+keystore/
+*.jks
+*.keystore
+release/

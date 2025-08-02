@@ -23,7 +23,11 @@ import androidx.room.PrimaryKey
 data class Quote(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "customer_id", index = true) val customerId: Long,
-    @ColumnInfo(name = "date_timestamp") val dateTimestamp: Long,
+    @ColumnInfo(name = "product_id", index = true) val productId: Long,
+    @ColumnInfo(name = "quantity") val quantity: Int,
+    @ColumnInfo(name = "unit_price") val unitPrice: Double,
     @ColumnInfo(name = "total_amount") val totalAmount: Double,
+    @ColumnInfo(name = "description") val description: String = "",
+    @ColumnInfo(name = "date_timestamp") val dateTimestamp: Long,
     @ColumnInfo(name = "status") val status: String = "pending"
 )

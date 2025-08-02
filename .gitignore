@@ -13,3 +13,18 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Keystore files (SECURITY: Never commit signing keys!)
+*.jks
+*.keystore
+keystore.properties
+app/keystore.properties
+app/keystore/
+keystore/
+release-key.keystore
+debug.keystore
+
+# APK files
+*.apk
+*.aab
+app/release/

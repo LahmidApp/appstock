@@ -12,10 +12,13 @@ import kotlinx.coroutines.launch
  */
 class InvoiceViewModel(private val repository: InvoiceRepository) : ViewModel() {
     val allInvoices: LiveData<List<Invoice>> = repository.allInvoices
+    val pendingInvoices: LiveData<List<Invoice>> = repository.pendingInvoices
 
     fun insert(invoice: Invoice) = viewModelScope.launch(Dispatchers.IO) {
         repository.insert(invoice)
     }
+
+    fun addInvoice(invoice: Invoice) = insert(invoice)
 
     fun update(invoice: Invoice) = viewModelScope.launch(Dispatchers.IO) {
         repository.update(invoice)
@@ -37,15 +40,5 @@ class InvoiceViewModel(private val repository: InvoiceRepository) : ViewModel() 
 
     fun deleteItem(item: InvoiceItem) = viewModelScope.launch(Dispatchers.IO) {
         repository.deleteItem(item)
-    }
-}
-
-class InvoiceViewModelFactory(private val repository: InvoiceRepository) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(InvoiceViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return InvoiceViewModel(repository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

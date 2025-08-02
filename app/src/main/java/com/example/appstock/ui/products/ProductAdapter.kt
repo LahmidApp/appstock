@@ -37,7 +37,7 @@ class ProductAdapter(private val onItemClick: (Product) -> Unit) :
         fun bind(product: Product) {
             nameText.text = product.name
             priceText.text = String.format("%.2f DH", product.price)
-            quantityText.text = "Quantité: ${product.quantity}"
+            quantityText.text = "Quantité: ${product.stock}"
         }
     }
 

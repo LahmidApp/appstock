@@ -32,5 +32,6 @@ data class InvoiceItem(
     @ColumnInfo(name = "product_id", index = true) val productId: Long,
     @ColumnInfo(name = "quantity") val quantity: Int,
     @ColumnInfo(name = "unit_price") val unitPrice: Double,
-    @ColumnInfo(name = "total_price") val totalPrice: Double
+    @ColumnInfo(name = "total_price") val totalPrice: Double,
+    @ColumnInfo(name = "description") val description: String? = null // Pour les articles libres
 )

@@ -15,8 +15,11 @@ import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Euro
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -28,113 +31,257 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import com.example.appstock.viewmodel.ProductViewModel
-import com.example.appstock.viewmodel.ProductViewModelFactory
-import com.example.appstock.data.LibraryDatabase
-import com.example.appstock.data.ProductRepository
+import com.example.appstock.viewmodel.CustomerViewModel
+import com.example.appstock.viewmodel.SaleViewModel
+import com.example.appstock.viewmodel.SaleHeaderViewModel
+import com.example.appstock.viewmodel.InvoiceViewModel
 import com.example.appstock.data.Product
+import com.example.appstock.data.Customer
+import com.example.appstock.data.Sale
+import com.example.appstock.data.SaleHeader
+import com.example.appstock.data.Invoice
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavController
+import com.example.appstock.ui.utils.getProductViewModel
+import com.example.appstock.ui.utils.getCustomerViewModel
+import com.example.appstock.ui.utils.getSaleViewModel
+import com.example.appstock.ui.utils.getSaleHeaderViewModel
+import com.example.appstock.ui.utils.getInvoiceViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
- * Dashboard screen showing key metrics and quick actions
+ * Dashboard screen showing key metrics and quick actions - Updated for multi-product sales
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(navController: NavController) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val productViewModel: ProductViewModel = remember {
-        val database = LibraryDatabase.getDatabase(context)
-        val repository = ProductRepository(database.productDao())
-        ViewModelProvider(
-            context as androidx.lifecycle.ViewModelStoreOwner,
-            ProductViewModelFactory(repository)
-        )[ProductViewModel::class.java]
-    }
-    val products by productViewModel.products.collectAsState()
-    val isLoading by productViewModel.isLoading.collectAsState()
-
-    LaunchedEffect(Unit) {
-        productViewModel.loadProducts()
-    }
+    val productViewModel: ProductViewModel = getProductViewModel()
+    val customerViewModel: CustomerViewModel = getCustomerViewModel()
+    val saleViewModel: SaleViewModel = getSaleViewModel()
+    val saleHeaderViewModel: SaleHeaderViewModel = getSaleHeaderViewModel()
+    val invoiceViewModel: InvoiceViewModel = getInvoiceViewModel()
+    
+    val allProducts by productViewModel.allProducts.observeAsState(emptyList<Product>())
+    val allCustomers by customerViewModel.allCustomers.observeAsState(emptyList<Customer>())
+    val allSales by saleViewModel.allSales.observeAsState(emptyList<Sale>())
+    val allSaleHeaders by saleHeaderViewModel.allSaleHeaders.observeAsState(emptyList<SaleHeader>())
+    val allInvoices by invoiceViewModel.allInvoices.observeAsState(emptyList<Invoice>())
+    
+    // Calculs en temps réel
+    val totalProducts = allProducts.size
+    val totalCustomers = allCustomers.size
+    val lowStockProducts = allProducts.filter { it.stock <= 5 }
+    val outOfStockProducts = allProducts.filter { it.stock == 0 }
+    
+    // Calculs financiers - utilisation des ventes multi-produits
+    val now = System.currentTimeMillis()
+    val oneDayMillis = 24 * 60 * 60 * 1000L
+    val oneMonthMillis = 30 * oneDayMillis
+    val todayStart = now - (now % oneDayMillis)
+    
+    // Utilisation des nouvelles ventes multi-produits pour les calculs
+    val todaySaleHeaders = allSaleHeaders.filter { saleHeader -> saleHeader.saleDate >= todayStart }
+    val dailyRevenue = todaySaleHeaders.sumOf { saleHeader -> saleHeader.totalAmount }
+    val monthlyRevenue = allSaleHeaders.filter { saleHeader -> 
+        saleHeader.saleDate >= (now - oneMonthMillis)
+    }.sumOf { saleHeader -> saleHeader.totalAmount }
+    
+    // Calculs legacy pour comparaison (à supprimer progressivement)
+    val todayLegacySales = allSales.filter { it.saleDate >= todayStart }
+    val dailyLegacyRevenue = todayLegacySales.sumOf { it.totalPrice }
+    
+    val unpaidInvoices = allInvoices.filter { !it.isPaid }
+    val totalUnpaidAmount = unpaidInvoices.sumOf { it.totalAmount }
+    
+    val totalInventoryValue = allProducts.sumOf { (it.price * it.stock).toDouble() }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // Header
         Text(
             text = "Tableau de bord",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
-
-        // Quick stats cards
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(bottom = 24.dp)
-        ) {
-            items(getQuickStats(products)) { stat ->
-                StatCard(stat = stat)
-            }
-        }
-
-        // Quick actions
-        Text(
-            text = "Actions rapides",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(getQuickActions(navController)) { action ->
-                QuickActionCard(action = action)
+            // Métriques principales
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MetricCard(
+                        title = "Produits",
+                        value = totalProducts.toString(),
+                        icon = Icons.Default.Inventory,
+                        modifier = Modifier.weight(1f)
+                    )
+                    MetricCard(
+                        title = "Clients",
+                        value = totalCustomers.toString(),
+                        icon = Icons.Default.People,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MetricCard(
+                        title = "CA Journalier",
+                        value = "${String.format("%.2f", dailyRevenue)}Dhs",
+                        icon = Icons.Default.Euro,
+                        modifier = Modifier.weight(1f)
+                    )
+                    MetricCard(
+                        title = "CA Mensuel",
+                        value = "${String.format("%.2f", monthlyRevenue)}Dhs",
+                        icon = Icons.Default.AttachMoney,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MetricCard(
+                        title = "Valeur Stock",
+                        value = "${String.format("%.2f", totalInventoryValue)}Dhs",
+                        icon = Icons.Default.Inventory,
+                        modifier = Modifier.weight(1f)
+                    )
+                    MetricCard(
+                        title = "Impayés",
+                        value = "${String.format("%.2f", totalUnpaidAmount)}Dhs",
+                        icon = Icons.Default.Warning,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // Alertes stock
+            if (lowStockProducts.isNotEmpty() || outOfStockProducts.isNotEmpty()) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                "⚠️ Alertes Stock",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (outOfStockProducts.isNotEmpty()) {
+                                Text("${outOfStockProducts.size} produits en rupture de stock")
+                            }
+                            if (lowStockProducts.isNotEmpty()) {
+                                Text("${lowStockProducts.size} produits avec stock faible (≤5)")
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Actions rapides
+            item {
+                Text(
+                    "Actions rapides",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            item {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(getQuickActions(navController)) { action ->
+                        QuickActionCard(action = action)
+                    }
+                }
+            }
+
+            // Produits avec stock faible
+            if (lowStockProducts.isNotEmpty()) {
+                item {
+                    Text(
+                        "Produits à réapprovisionner",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                items(lowStockProducts.take(5)) { product ->
+                    Card {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(product.name, fontWeight = FontWeight.Medium)
+                                Text("Stock: ${product.stock}", style = MaterialTheme.typography.bodySmall)
+                            }
+                            Text("${String.format("%.2f", product.price)}Dhs", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatCard(stat: QuickStat) {
-    Card(
-        modifier = Modifier
-            .width(160.dp)
-            .height(120.dp)
-    ) {
+fun MetricCard(
+    title: String,
+    value: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary
+) {
+    Card(modifier = modifier) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Icon(
-                    imageVector = stat.icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            
-            Column {
-                Text(
-                    text = stat.value,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = stat.label,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(32.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -181,12 +328,6 @@ fun QuickActionCard(action: QuickAction) {
     }
 }
 
-data class QuickStat(
-    val icon: ImageVector,
-    val value: String,
-    val label: String
-)
-
 data class QuickAction(
     val icon: ImageVector,
     val title: String,
@@ -194,62 +335,31 @@ data class QuickAction(
     val onClick: () -> Unit
 )
 
-fun getQuickStats(products: List<Product>): List<QuickStat> {
-    return listOf(
-        QuickStat(
-            icon = Icons.Default.Inventory,
-            value = products.size.toString(),
-            label = "Produits"
-        ),
-        QuickStat(
-            icon = Icons.Default.Warning,
-            value = "0", // TODO: Calculate low stock
-            label = "Stock faible"
-        ),
-        QuickStat(
-            icon = Icons.Default.TrendingUp,
-            value = "0€", // TODO: Calculate today's sales
-            label = "Ventes du jour"
-        ),
-        QuickStat(
-            icon = Icons.Default.People,
-            value = "0", // TODO: Calculate customers
-            label = "Clients"
-        )
-    )
-}
-
 fun getQuickActions(navController: NavController): List<QuickAction> {
     return listOf(
         QuickAction(
             icon = Icons.Default.Add,
-            title = "Ajouter un produit",
-            description = "Créer un nouveau produit avec code QR",
+            title = "Ajouter produit",
+            description = "Nouveau produit",
             onClick = { navController.navigate("products") }
         ),
         QuickAction(
             icon = Icons.Default.ShoppingCart,
             title = "Nouvelle vente",
-            description = "Enregistrer une vente rapide",
-            onClick = {}
+            description = "Enregistrer vente",
+            onClick = { navController.navigate("sales") }
         ),
         QuickAction(
             icon = Icons.Default.Receipt,
-            title = "Créer une facture",
-            description = "Générer une nouvelle facture",
-            onClick = {}
+            title = "Créer facture",
+            description = "Nouvelle facture",
+            onClick = { navController.navigate("invoices") }
         ),
         QuickAction(
-            icon = Icons.Default.Description,
-            title = "Nouveau devis",
-            description = "Créer un devis pour un client",
-            onClick = {}
-        ),
-        QuickAction(
-            icon = Icons.Default.QrCodeScanner,
-            title = "Scanner un code",
-            description = "Scanner un code QR ou code-barres",
-            onClick = {}
+            icon = Icons.Default.People,
+            title = "Ajouter client",
+            description = "Nouveau client",
+            onClick = { navController.navigate("customers") }
         )
     )
 }

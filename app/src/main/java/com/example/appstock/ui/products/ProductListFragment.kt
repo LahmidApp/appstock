@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.appstock.R
 import androidx.compose.material.icons.filled.Add // Make sure this import is present
 
-import com.example.appstock.data.LibraryDatabase
+import com.example.appstock.data.AppDatabase
 import com.example.appstock.data.ProductRepository
 import com.example.appstock.viewmodel.ProductViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -59,7 +59,7 @@ class ProductListFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val database = LibraryDatabase.getDatabase(requireContext())
+        val database = AppDatabase.getDatabase(requireContext())
         val repository = ProductRepository(database.productDao())
         val factory = ProductViewModelFactory(repository)
         productViewModel = ViewModelProvider(this, factory)[ProductViewModel::class.java]
@@ -106,24 +106,64 @@ class ProductListFragment : Fragment() {
         val fileDir = context.getExternalFilesDir(null)
         val file = java.io.File(fileDir, fileName)
         try {
-                val document = com.itextpdf.text.Document()
-                com.itextpdf.text.pdf.PdfWriter.getInstance(document, java.io.FileOutputStream(file))
-                document.open()
-            document.add(com.itextpdf.text.Paragraph("Liste des produits"))
-            document.add(com.itextpdf.text.Paragraph("\n"))
-                val table = com.itextpdf.text.pdf.PdfPTable(4)
-                table.addCell("Nom")
-                table.addCell("Prix")
-                table.addCell("Quantité")
-                table.addCell("Code barre")
-                for (p in products) {
-                    table.addCell(p.name)
-                    table.addCell(p.price.toString())
-                    table.addCell(p.quantity.toString())
-                    table.addCell(p.barcode)
-                }
-                document.add(table)
-                document.close()
+            // Use Android native PDF generation instead of iTextPDF
+            val document = android.graphics.pdf.PdfDocument()
+            val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 size
+            val page = document.startPage(pageInfo)
+            val canvas = page.canvas
+            val paint = android.graphics.Paint().apply {
+                textSize = 16f
+                color = android.graphics.Color.BLACK
+            }
+            val titlePaint = android.graphics.Paint().apply {
+                textSize = 20f
+                color = android.graphics.Color.BLACK
+                isFakeBoldText = true
+            }
+            
+            // Draw title
+            canvas.drawText("Liste des produits", 50f, 50f, titlePaint)
+            
+            // Draw table headers
+            var yPosition = 100f
+            val lineHeight = 25f
+            val colWidths = floatArrayOf(150f, 100f, 100f, 150f) // Nom, Prix, Quantité, Code barre
+            var xPosition = 50f
+            
+            paint.isFakeBoldText = true
+            canvas.drawText("Nom", xPosition, yPosition, paint)
+            xPosition += colWidths[0]
+            canvas.drawText("Prix", xPosition, yPosition, paint)
+            xPosition += colWidths[1]
+            canvas.drawText("Quantité", xPosition, yPosition, paint)
+            xPosition += colWidths[2]
+            canvas.drawText("Code barre", xPosition, yPosition, paint)
+            
+            paint.isFakeBoldText = false
+            yPosition += lineHeight
+            
+            // Draw table rows
+            for (product in products) {
+                if (yPosition > 800) break // Avoid going off page
+                xPosition = 50f
+                canvas.drawText(product.name, xPosition, yPosition, paint)
+                xPosition += colWidths[0]
+                canvas.drawText("${product.price}Dhs", xPosition, yPosition, paint)
+                xPosition += colWidths[1]
+                canvas.drawText(product.stock.toString(), xPosition, yPosition, paint)
+                xPosition += colWidths[2]
+                canvas.drawText(product.barcode, xPosition, yPosition, paint)
+                yPosition += lineHeight
+            }
+            
+            document.finishPage(page)
+            
+            // Write to file
+            java.io.FileOutputStream(file).use { outputStream ->
+                document.writeTo(outputStream)
+            }
+            document.close()
+            
             Toast.makeText(context, "PDF exporté: ${file.absolutePath}", Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -132,7 +172,8 @@ class ProductListFragment : Fragment() {
     }
 
     /**
-     * Export the product list to an Excel file using Apache POI.
+     * Export the product list to a CSV file using native Android I/O.
+     * Replaced Apache POI with native CSV export for better compatibility.
      */
     private fun exportToExcel() {
         val context = requireContext()
@@ -141,32 +182,35 @@ class ProductListFragment : Fragment() {
             Toast.makeText(context, "Aucun produit à exporter", Toast.LENGTH_SHORT).show()
             return
         }
-        val fileName = "produits_${System.currentTimeMillis()}.xlsx"
+        val fileName = "produits_${System.currentTimeMillis()}.csv"
         val fileDir = context.getExternalFilesDir(null)
         val file = java.io.File(fileDir, fileName)
         try {
-                val workbook: org.apache.poi.ss.usermodel.Workbook = org.apache.poi.xssf.usermodel.XSSFWorkbook()
-                val sheet = workbook.createSheet("Produits")
-                val header = sheet.createRow(0)
-                header.createCell(0).setCellValue("Nom")
-                header.createCell(1).setCellValue("Prix")
-                header.createCell(2).setCellValue("Quantité")
-                header.createCell(3).setCellValue("Code barre")
-                for ((index, p) in products.withIndex()) {
-                    val row = sheet.createRow(index + 1)
-                    row.createCell(0).setCellValue(p.name)
-                    row.createCell(1).setCellValue(p.price)
-                    row.createCell(2).setCellValue(p.quantity.toDouble())
-                    row.createCell(3).setCellValue(p.barcode)
+            file.bufferedWriter().use { writer ->
+                // En-tête CSV
+                writer.write("Nom,Prix,Quantité,Code barre,QR Code,Description,Types,Prix coûtant,Stock minimum,Fournisseur\n")
+                
+                // Données des produits
+                for (product in products) {
+                    val line = listOf(
+                        product.name.replace(",", ";"), // Remplacer les virgules pour éviter les conflits CSV
+                        product.price.toString(),
+                        product.stock.toString(),
+                        product.barcode.replace(",", ";"),
+                        product.qrCode.replace(",", ";"),
+                        (product.description ?: "").replace(",", ";"),
+                        product.types.joinToString("|").replace(",", ";"),
+                        (product.costPrice ?: 0.0).toString(),
+                        (product.minStockLevel ?: 0).toString(),
+                        (product.supplier ?: "").replace(",", ";")
+                    ).joinToString(",")
+                    writer.write("$line\n")
                 }
-                file.outputStream().use { fos ->
-                    workbook.write(fos)
-                }
-                workbook.close()
-            Toast.makeText(context, "Excel exporté: ${file.absolutePath}", Toast.LENGTH_LONG).show()
+            }
+            Toast.makeText(context, "CSV exporté: ${file.absolutePath}", Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(context, "Erreur lors de l'exportation Excel", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Erreur lors de l'exportation CSV", Toast.LENGTH_SHORT).show()
         }
     }
 }

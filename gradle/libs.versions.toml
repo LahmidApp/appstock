@@ -15,6 +15,7 @@ materialIconsExtended = "1.7.8"
 materialVersion = "1.14.0"
 navigationCompose = "2.9.2"
 roomVersion = "2.6.1"
+runtimeLivedata = "1.8.3"
 
 [libraries]
 androidx-compose-material-material-icons-core = { module = "androidx.compose.material:material-icons-core", version.ref = "androidxMaterialIconsCore" }
@@ -26,6 +27,7 @@ androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomVers
 androidx-room-paging = { module = "androidx.room:room-paging", version.ref = "roomVersion" }
 androidx-room-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomVersion" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomVersion" }
+androidx-ui-text = { module = "androidx.compose.ui:ui-text" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -42,6 +44,7 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 material = { module = "com.google.android.material:material", version.ref = "material" }
 material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 material-v1140 = { module = "com.google.android.material:material", version = "1.14.0-alpha03" }
+androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "runtimeLivedata" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

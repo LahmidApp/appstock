@@ -8,6 +8,8 @@ import androidx.lifecycle.LiveData
  */
 class CustomerRepository(private val customerDao: CustomerDao) {
     val allCustomers: LiveData<List<Customer>> = customerDao.getAllCustomers()
+    val recentCustomers: LiveData<List<Customer>> = customerDao.getRecentCustomers(10)
+    val loyalCustomers: LiveData<List<Customer>> = customerDao.getLoyalCustomers(10)
 
     @WorkerThread
     suspend fun getCustomerById(id: Long): Customer? = customerDao.getCustomerById(id)

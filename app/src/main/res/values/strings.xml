@@ -23,4 +23,5 @@
     <string name="store_name">Nom de la librairie</string>
     <string name="store_logo">Logo de la librairie</string>
     <string name="save_settings">Enregistrer les paramètres</string>
+    <string name="developer_name">LAHMID</string>
 </resources>

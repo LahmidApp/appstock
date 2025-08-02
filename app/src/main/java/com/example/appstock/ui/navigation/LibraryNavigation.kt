@@ -61,11 +61,17 @@ fun LibraryNavigation() {
             composable("dashboard") { DashboardScreen(navController) }
             composable("products") { ProductsScreen() }
             composable("sales") { SalesScreen() }
-            composable("invoices") { InvoicesScreen() }
+            composable("invoices") { InvoicesScreen(navController) }
             composable("quotes") { QuotesScreen() }
             composable("customers") { CustomersScreen() }
             composable("reports") { ReportsScreen() }
             composable("settings") { SettingsScreen() }
+            // Routes pour les écrans de factures
+            composable("createInvoice") { CreateInvoiceScreen() }
+            composable("pendingInvoices") { PendingInvoicesWrapperScreen() }
+            composable("paidInvoices") { PaidInvoicesWrapperScreen() }
+            composable("exportInvoicesPdf") { ExportInvoicesPdfWrapperScreen() }
+            composable("invoicesHistory") { InvoicesHistoryWrapperScreen() }
         }
     }
 }

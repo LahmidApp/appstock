@@ -1,9 +1,9 @@
 package com.example.appstock.ui.screens
 
+import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
@@ -15,12 +15,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType // Import pour le type de clavier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
-import androidx.compose.ui.platform.LocalContext
-import com.example.appstock.data.LibraryDatabase
+import com.example.appstock.ui.products.AddEditProductActivity
+import com.example.appstock.data.AppDatabase
 import com.example.appstock.data.ProductRepository
 import com.example.appstock.viewmodel.ProductViewModelFactory
 import com.example.appstock.data.Product
@@ -37,7 +39,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Suppress("UnusedMaterial3ScaffoldPaddingParameter")
 fun ProductsScreen() {
     val context = LocalContext.current
-    val database = remember(context) { LibraryDatabase.getDatabase(context) }
+    val database = remember(context) { AppDatabase.getDatabase(context) }
     val repository = remember(database) { ProductRepository(database.productDao()) }
     val viewModelFactory = remember(repository) { ProductViewModelFactory(repository) }
     val productViewModel: ProductViewModel = viewModel(factory = viewModelFactory)
@@ -130,7 +132,11 @@ fun ProductsScreen() {
                 items(products) { product ->
                     ProductCard(
                         product = product,
-                        onEdit = { /* TODO: Handle edit */ },
+                        onEdit = { 
+                            val intent = Intent(context, AddEditProductActivity::class.java)
+                            intent.putExtra(AddEditProductActivity.EXTRA_PRODUCT_ID, product.id)
+                            context.startActivity(intent)
+                        },
                         onDelete = { productViewModel.deleteProduct(product.id) }
                     )
                 }
@@ -201,14 +207,14 @@ fun ProductCard(
                     ) {
                         Text(
                             // L'affichage du prix est déjà correct si product.price est Double
-                            text = "Prix: ${product.price}€", // Vous voudrez peut-être formater ce Double
+                            text = "Prix: ${product.price}Dhs", // Vous voudrez peut-être formater ce Double
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = "Stock: ${product.quantity}",
+                            text = "Stock: ${product.stock}",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = if (product.minStockLevel != null && product.quantity <= product.minStockLevel) { // Assurez-vous que minStockLevel n'est pas null pour la comparaison
+                            color = if (product.minStockLevel != null && product.stock <= product.minStockLevel) { // Assurez-vous que minStockLevel n'est pas null pour la comparaison
                                 MaterialTheme.colorScheme.error
                             } else {
                                 MaterialTheme.colorScheme.onSurface
@@ -216,9 +222,9 @@ fun ProductCard(
                         )
                     }
 
-                    product.category?.let { cat ->
+                    if (product.types.isNotEmpty()) {
                         Text(
-                            text = "Catégorie: $cat",
+                            text = "Types: ${product.types.joinToString(", ")}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp)
@@ -247,14 +253,15 @@ fun ProductCard(
 fun AddProductDialog(
     onDismiss: () -> Unit,
     // CORRIGÉ: La signature attend maintenant des Double pour le prix et le coût.
-    onConfirm: (String, String?, Double, Double, Int, String?, String?, Int) -> Unit
+    onConfirm: (String, String?, Double, Double, Int, List<String>, String?, Int) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var priceStr by remember { mutableStateOf("") } // Garder en String pour l'input
     var costPriceStr by remember { mutableStateOf("") } // Garder en String pour l'input
     var quantityStr by remember { mutableStateOf("") } // Garder en String pour l'input
-    var category by remember { mutableStateOf("") }
+    var typeInput by remember { mutableStateOf("") }
+    var typesList by remember { mutableStateOf(listOf<String>()) }
     var supplier by remember { mutableStateOf("") }
     var minStockStr by remember { mutableStateOf("") } // Garder en String pour l'input
 
@@ -348,12 +355,42 @@ fun AddProductDialog(
                     )
                 }
 
-                OutlinedTextField(
-                    value = category,
-                    onValueChange = { category = it },
-                    label = { Text("Catégorie") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = typeInput,
+                        onValueChange = { typeInput = it },
+                        label = { Text("Type/Catégorie") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Button(onClick = {
+                        if (typeInput.isNotBlank() && !typesList.contains(typeInput)) {
+                            typesList = typesList + typeInput
+                            typeInput = ""
+                        }
+                    }, modifier = Modifier.padding(start = 8.dp)) {
+                        Text("+")
+                    }
+                }
+                if (typesList.isNotEmpty()) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        typesList.forEach { type ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(top = 4.dp)
+                            ) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Text(type, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                }
+                                IconButton(onClick = { typesList = typesList - type }) {
+                                    Icon(Icons.Filled.Delete, contentDescription = "Supprimer type")
+                                }
+                            }
+                        }
+                    }
+                }
 
                 OutlinedTextField(
                     value = supplier,
@@ -398,7 +435,7 @@ fun AddProductDialog(
                             currentPrice, // Converti en Double
                             currentCostPrice, // Converti en Double
                             currentQuantity,
-                            category.takeIf { it.isNotEmpty() },
+                            typesList,
                             supplier.takeIf { it.isNotEmpty() },
                             currentMinStock
                         )

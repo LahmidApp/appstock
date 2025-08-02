@@ -16,15 +16,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.filled.Add // For the FAB
 import androidx.compose.material.icons.filled.CheckCircle // For "Factures payées"
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.appstock.ui.invoices.AddEditInvoicesScreen
+import com.example.appstock.ui.invoices.PendingInvoicesScreen
+import com.example.appstock.ui.invoices.PaidInvoicesScreen
+import com.example.appstock.ui.invoices.ExportInvoicesPdfScreen
+import com.example.appstock.ui.invoices.InvoicesHistoryScreen
 
 /**
  * Invoices screen for managing invoices
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InvoicesScreen() {
-    var showNewInvoiceDialog by remember { mutableStateOf(false) }
-    
+fun InvoicesScreen(navController: NavController = rememberNavController()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -43,15 +51,13 @@ fun InvoicesScreen() {
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
-            
             FloatingActionButton(
-                onClick = { showNewInvoiceDialog = true },
+                onClick = { navController.navigate("addEditInvoice") },
                 modifier = Modifier.size(56.dp)
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Nouvelle facture") // Changed here
+                Icon(Icons.Filled.Add, contentDescription = "Nouvelle facture")
             }
         }
-        
         // Quick actions
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -61,43 +67,39 @@ fun InvoicesScreen() {
                     title = "Créer une facture",
                     description = "Générer une nouvelle facture pour un client",
                     icon = Icons.Default.Receipt,
-                    onClick = { /* TODO: Handle create invoice */ }
+                    onClick = { navController.navigate("createInvoice") }
                 )
             }
-            
             item {
                 InvoiceActionCard(
                     title = "Factures en attente",
                     description = "Voir les factures non payées",
                     icon = Icons.Default.Schedule,
-                    onClick = { /* TODO: Handle pending invoices */ }
+                    onClick = { navController.navigate("pendingInvoices") }
                 )
             }
-            
             item {
                 InvoiceActionCard(
                     title = "Factures payées",
                     description = "Consulter les factures réglées",
                     icon = Icons.Filled.CheckCircle,
-                    onClick = { /* TODO: Handle paid invoices */ }
+                    onClick = { navController.navigate("paidInvoices") }
                 )
             }
-            
             item {
                 InvoiceActionCard(
                     title = "Exporter en PDF",
                     description = "Générer et partager des factures PDF",
                     icon = Icons.Default.PictureAsPdf,
-                    onClick = { /* TODO: Handle PDF export */ }
+                    onClick = { navController.navigate("exportInvoicesPdf") }
                 )
             }
-            
             item {
                 InvoiceActionCard(
                     title = "Historique des factures",
                     description = "Voir toutes les factures créées",
                     icon = Icons.Default.History,
-                    onClick = { /* TODO: Handle invoice history */ }
+                    onClick = { navController.navigate("invoicesHistory") }
                 )
             }
         }

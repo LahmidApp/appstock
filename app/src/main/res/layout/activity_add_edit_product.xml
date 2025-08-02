@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="16dp">
+    android:layout_height="match_parent">
+
+    <ScrollView 
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/app_footer"
+        android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -15,11 +20,31 @@
             android:layout_height="wrap_content"
             android:hint="Nom du produit" />
         <!-- In activity_add_edit_product.xml -->
-        <EditText
-            android:id="@+id/edit_text_category"
+
+        <LinearLayout
+            android:id="@+id/layout_types"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Catégorie" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+            <EditText
+                android:id="@+id/edit_text_type"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Type/Catégorie" />
+            <Button
+                android:id="@+id/button_add_type"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/layout_types_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
 
         <EditText
             android:id="@+id/edit_text_cost_price"
@@ -89,3 +114,13 @@
 
     </LinearLayout>
 </ScrollView>
+
+    <!-- Footer -->
+    <include
+        android:id="@+id/app_footer"
+        layout="@layout/app_footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true" />
+
+</RelativeLayout>

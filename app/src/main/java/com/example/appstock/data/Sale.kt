@@ -16,5 +16,6 @@ data class Sale(
     @ColumnInfo(name = "unit_price") val unitPrice: Double,
     @ColumnInfo(name = "total_price") val totalPrice: Double,
     @ColumnInfo(name = "customer_id", index = true) val customerId: Long? = null,
-    @ColumnInfo(name = "date_timestamp") val dateTimestamp: Long
+    @ColumnInfo(name = "date_timestamp") val dateTimestamp: Long,
+    @ColumnInfo(name = "sale_date") val saleDate: Long = dateTimestamp
 )

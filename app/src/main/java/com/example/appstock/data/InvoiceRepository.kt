@@ -11,6 +11,7 @@ class InvoiceRepository(
     private val invoiceItemDao: InvoiceItemDao
 ) {
     val allInvoices: LiveData<List<Invoice>> = invoiceDao.getAllInvoices()
+    val pendingInvoices: LiveData<List<Invoice>> = invoiceDao.getPendingInvoices()
 
     @WorkerThread
     suspend fun getInvoiceById(id: Long): Invoice? = invoiceDao.getInvoiceById(id)
